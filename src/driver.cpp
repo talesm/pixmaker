@@ -86,7 +86,8 @@ redraw(SDL_Renderer* renderer, SDL_Texture* texture, pix::Subject& surface)
                      unsigned             stride,
                      const unsigned char* pixels) {
     SDL_UpdateTexture(texture, nullptr, pixels, stride);
-    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+    SDL_Rect rect{0, 0, 800, 600};
+    SDL_RenderCopy(renderer, texture, &rect, &rect);
   });
   SDL_RenderPresent(renderer);
 }
