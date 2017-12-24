@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <SDL.h>
+#include "Subject.hpp"
 
 using namespace std;
 
