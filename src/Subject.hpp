@@ -22,9 +22,10 @@ struct SubjectDetail; // Forward decl. Ignore this
 class Subject
 {
   std::unique_ptr<SubjectDetail> detail;
-  Subject();
+  Subject(std::unique_ptr<SubjectDetail> detail);
 
 public:
+  ~Subject();
   Subject(const Subject&) = delete;
   Subject& operator=(const Subject&) = delete;
   Subject(Subject&&);
