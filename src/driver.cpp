@@ -6,7 +6,7 @@
 using namespace std;
 
 void
-redraw(SDL_Renderer* renderer);
+redraw(SDL_Renderer* renderer, SDL_Texture* texture, pix::Subject& surface);
 
 int
 main(int argc, char** argv)
@@ -33,14 +33,42 @@ main(int argc, char** argv)
     return 1;
   }
 
+  auto subject = pix::Subject::create(800, 600);
+  auto texture = SDL_CreateTexture(
+    renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 800, 600);
+
   SDL_Event ev;
   while (SDL_WaitEvent(&ev)) {
+    bool dirty = false;
     switch (ev.type) {
       case SDL_QUIT:
         return 0;
       case SDL_WINDOWEVENT:
-        redraw(renderer);
+        dirty = true;
         break;
+      case SDL_KEYDOWN:
+        if (ev.key.keysym.sym == SDLK_s) {
+          subject.save("./test.png");
+        }
+        break;
+      case SDL_MOUSEBUTTONDOWN:
+        dirty |=
+          subject.clickDown(ev.button.x,
+                            ev.button.y,
+                            pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+        break;
+      case SDL_MOUSEBUTTONUP:
+        dirty |=
+          subject.clickUp(ev.button.x,
+                          ev.button.y,
+                          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+        break;
+      case SDL_MOUSEMOTION:
+        dirty |= subject.move(ev.motion.x, ev.motion.y);
+        break;
+    }
+    if (dirty) {
+      redraw(renderer, texture, subject);
     }
   }
 
@@ -48,9 +76,17 @@ main(int argc, char** argv)
 }
 
 void
-redraw(SDL_Renderer* renderer)
+redraw(SDL_Renderer* renderer, SDL_Texture* texture, pix::Subject& surface)
 {
-  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  SDL_SetRenderDrawColor(renderer, 127, 127, 127, 255);
   SDL_RenderClear(renderer);
+  surface.render([&](unsigned             w,
+                     unsigned             h,
+                     unsigned char        bpp,
+                     unsigned             stride,
+                     const unsigned char* pixels) {
+    SDL_UpdateTexture(texture, nullptr, pixels, stride);
+    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+  });
   SDL_RenderPresent(renderer);
 }
