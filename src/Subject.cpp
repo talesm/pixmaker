@@ -22,6 +22,10 @@ Subject::~Subject()
   }
 }
 
+Subject::Subject(Subject&&) = default;
+Subject&
+Subject::operator=(Subject&&) = default;
+
 Subject
 Subject::create(unsigned w, unsigned h)
 {
