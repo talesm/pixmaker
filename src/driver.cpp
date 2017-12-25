@@ -5,8 +5,16 @@
 
 using namespace std;
 
-void
-redraw(SDL_Renderer* renderer, SDL_Texture* texture, pix::Subject& surface);
+struct Driver
+{
+  SDL_Window*              window   = nullptr;
+  SDL_Renderer*            renderer = nullptr;
+  SDL_Texture*             texture  = nullptr;
+  unique_ptr<pix::Subject> subject;
+
+  ~Driver();
+  void redraw() const;
+};
 
 int
 main(int argc, char** argv)
@@ -17,25 +25,30 @@ main(int argc, char** argv)
   }
   atexit(SDL_Quit);
 
-  auto window = SDL_CreateWindow("Pix",
-                                 SDL_WINDOWPOS_UNDEFINED,
-                                 SDL_WINDOWPOS_UNDEFINED,
-                                 800,
-                                 600,
-                                 SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
-  if (window == nullptr) {
+  Driver driver;
+  driver.window = SDL_CreateWindow("Pix",
+                                   SDL_WINDOWPOS_UNDEFINED,
+                                   SDL_WINDOWPOS_UNDEFINED,
+                                   800,
+                                   600,
+                                   SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+  if (driver.window == nullptr) {
     cerr << SDL_GetError() << endl;
     return 1;
   }
-  auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer == nullptr) {
+  driver.renderer =
+    SDL_CreateRenderer(driver.window, -1, SDL_RENDERER_ACCELERATED);
+  if (driver.renderer == nullptr) {
     cerr << SDL_GetError() << endl;
     return 1;
   }
 
-  auto subject = pix::Subject::create(800, 600);
-  auto texture = SDL_CreateTexture(
-    renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 800, 600);
+  driver.subject = make_unique<pix::Subject>(pix::Subject::create(800, 600));
+  driver.texture = SDL_CreateTexture(driver.renderer,
+                                     SDL_PIXELFORMAT_ARGB8888,
+                                     SDL_TEXTUREACCESS_STREAMING,
+                                     800,
+                                     600);
 
   SDL_Event ev;
   while (SDL_WaitEvent(&ev)) {
@@ -48,43 +61,59 @@ main(int argc, char** argv)
         break;
       case SDL_KEYDOWN:
         if (ev.key.keysym.sym == SDLK_s) {
-          subject.save("./test.png");
+          driver.subject->save("./test.png");
         }
         break;
       case SDL_MOUSEBUTTONDOWN:
-        dirty |=
-          subject.clickDown(ev.button.x,
-                            ev.button.y,
-                            pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+        dirty |= driver.subject->clickDown(
+          ev.button.x,
+          ev.button.y,
+          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
         break;
       case SDL_MOUSEBUTTONUP:
-        dirty |=
-          subject.clickUp(ev.button.x,
-                          ev.button.y,
-                          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+        dirty |= driver.subject->clickUp(
+          ev.button.x,
+          ev.button.y,
+          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
         break;
       case SDL_MOUSEMOTION:
-        dirty |= subject.move(ev.motion.x, ev.motion.y);
+        dirty |= driver.subject->move(ev.motion.x, ev.motion.y);
         break;
     }
     if (dirty) {
-      redraw(renderer, texture, subject);
+      driver.redraw();
     }
   }
 
   return 0;
 }
 
+Driver::~Driver()
+{
+  if (subject) {
+    subject.reset();
+  }
+  if (texture) {
+    SDL_DestroyTexture(texture);
+  }
+  if (renderer) {
+    SDL_DestroyRenderer(renderer);
+  }
+  if (window) {
+    SDL_DestroyWindow(window);
+  }
+}
+
 void
-redraw(SDL_Renderer* renderer, SDL_Texture* texture, pix::Subject& surface)
+Driver::redraw() const
 {
   SDL_SetRenderDrawColor(renderer, 127, 127, 127, 255);
   SDL_RenderClear(renderer);
-  surface.render([&](unsigned             w,
-                     unsigned             h,
-                     unsigned char        bpp,
-                     unsigned             stride,
-                     const unsigned char* pixels) {
+  subject->render([&](unsigned             w,
+                      unsigned             h,
+                      unsigned char        bpp,
+                      unsigned             stride,
+                      const unsigned char* pixels) {
     SDL_UpdateTexture(texture, nullptr, pixels, stride);
     SDL_Rect rect{0, 0, 800, 600};
     SDL_RenderCopy(renderer, texture, &rect, &rect);
