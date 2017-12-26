@@ -13,7 +13,8 @@ struct Driver
   unique_ptr<pix::Subject> subject;
 
   ~Driver();
-  void redraw() const;
+  void   redraw() const;
+  string inputCommand(const string& prompt) const;
 };
 
 int
@@ -62,6 +63,19 @@ main(int argc, char** argv)
       case SDL_KEYDOWN:
         if (ev.key.keysym.sym == SDLK_s) {
           driver.subject->save("./test.png");
+        } else if (ev.key.keysym.sym == SDLK_TAB) {
+          auto command = driver.inputCommand("Type a command");
+          if (command.size() > 0) {
+            if (command[0] == 's') {
+              if (command.size() == 1) {
+                driver.subject->save("./test.png");
+              } else {
+                driver.subject->save(command.substr(1).c_str());
+              }
+            } else if (command[0] == 'q') {
+              return 0;
+            }
+          }
         }
         break;
       case SDL_MOUSEBUTTONDOWN:
@@ -81,7 +95,10 @@ main(int argc, char** argv)
         break;
     }
     if (dirty) {
+      SDL_SetRenderDrawColor(driver.renderer, 127, 127, 127, 255);
+      SDL_RenderClear(driver.renderer);
       driver.redraw();
+      SDL_RenderPresent(driver.renderer);
     }
   }
 
@@ -107,8 +124,6 @@ Driver::~Driver()
 void
 Driver::redraw() const
 {
-  SDL_SetRenderDrawColor(renderer, 127, 127, 127, 255);
-  SDL_RenderClear(renderer);
   subject->render([&](unsigned             w,
                       unsigned             h,
                       unsigned char        bpp,
@@ -118,5 +133,79 @@ Driver::redraw() const
     SDL_Rect rect{0, 0, 800, 600};
     SDL_RenderCopy(renderer, texture, &rect, &rect);
   });
-  SDL_RenderPresent(renderer);
+}
+
+#include "KW_button.h"
+#include "KW_editbox.h"
+#include "KW_frame.h"
+#include "KW_gui.h"
+#include "KW_label.h"
+#include "KW_renderdriver_sdl2.h"
+
+/* Callback for when the OK button is clicked */
+static bool quit = false;
+static void
+OKClicked(KW_Widget* widget, int b)
+{
+  quit = true;
+}
+
+static void
+EnterPressed(KW_Widget* widget, SDL_Keycode sym, SDL_Scancode code)
+{
+  if (sym == SDLK_KP_ENTER || sym == SDLK_RETURN) {
+    quit = true;
+  }
+}
+
+string
+Driver::inputCommand(const string& prompt) const
+{
+  quit = false;
+  /* Initialize KiWi */
+  KW_RenderDriver* driver = KW_CreateSDL2RenderDriver(renderer, window);
+  KW_Surface*      set    = KW_LoadSurface(driver, "res/tileset.png");
+  KW_GUI*          gui    = KW_Init(driver, set);
+
+  /* Create the top-level framve */
+  KW_Rect windowrect = {0, 0, 800, 600};
+  KW_Rect framerect  = {10, 10, 300, 220};
+  KW_RectCenterInParent(&windowrect, &framerect);
+  KW_Widget* frame = KW_CreateFrame(gui, NULL, &framerect);
+
+  /* Create the title, label and edibox widgets */
+  KW_Rect  titlerect   = {10, 10, 280, 30};
+  KW_Rect  labelrect   = {10, 50, 280, 30};
+  KW_Rect  editboxrect = {10, 100, 280, 40};
+  KW_Rect* rects[]     = {&labelrect, &editboxrect};
+  // unsigned weights[]   = {1, 4};
+  // KW_RectFillParentHorizontally(
+  //   &framerect, rects, weights, 2, 10, KW_RECT_ALIGN_MIDDLE);
+  KW_CreateLabel(gui, frame, "Input command", &titlerect);
+  KW_CreateLabel(gui, frame, prompt.c_str(), &labelrect);
+
+  auto editbox = KW_CreateEditbox(gui, frame, "", &editboxrect);
+  KW_AddWidgetKeyUpHandler(editbox, EnterPressed);
+  KW_SetFocusedWidget(editbox);
+
+  KW_Rect    buttonrect = {250, 170, 40, 40};
+  KW_Widget* okbutton = KW_CreateButtonAndLabel(gui, frame, "OK", &buttonrect);
+  KW_AddWidgetMouseDownHandler(okbutton, OKClicked);
+
+  /* Main loop */
+  while (!SDL_QuitRequested() && !quit) {
+    SDL_RenderClear(renderer);
+    KW_ProcessEvents(gui);
+    redraw();
+    KW_Paint(gui);
+    SDL_RenderPresent(renderer);
+    SDL_Delay(1);
+  }
+  string input = KW_GetEditboxText(editbox);
+
+  /* free stuff */
+  KW_Quit(gui);
+  KW_ReleaseSurface(driver, set);
+  KW_ReleaseRenderDriver(driver);
+  return input;
 }
