@@ -61,9 +61,7 @@ main(int argc, char** argv)
         dirty = true;
         break;
       case SDL_KEYDOWN:
-        if (ev.key.keysym.sym == SDLK_s) {
-          driver.subject->save("./test.png");
-        } else if (ev.key.keysym.sym == SDLK_TAB) {
+        if (ev.key.keysym.sym == SDLK_TAB) {
           auto command = driver.inputCommand("Type a command");
           if (command.size() > 0) {
             if (command[0] == 's') {
@@ -74,6 +72,8 @@ main(int argc, char** argv)
               }
             } else if (command[0] == 'q') {
               return 0;
+            } else {
+              cout << "Invalid command: \n" << command << endl;
             }
           }
         }
