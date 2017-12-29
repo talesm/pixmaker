@@ -12,7 +12,14 @@ struct Driver
   SDL_Texture*             texture  = nullptr;
   unique_ptr<pix::Subject> subject;
 
+  Driver(unsigned w, unsigned h, const char* filename = nullptr);
   ~Driver();
+  /**
+   * @brief Handles the event.
+   * @return true if it need to be redrawn;
+   */
+  bool   handle(const SDL_Event& ev);
+  void   render() const;
   void   redraw() const;
   string inputCommand(const string& prompt) const;
 };
@@ -26,108 +33,44 @@ main(int argc, char** argv)
   }
   atexit(SDL_Quit);
 
-  Driver driver;
-  driver.window = SDL_CreateWindow("Pix",
-                                   SDL_WINDOWPOS_UNDEFINED,
-                                   SDL_WINDOWPOS_UNDEFINED,
-                                   800,
-                                   600,
-                                   SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
-  if (driver.window == nullptr) {
-    cerr << SDL_GetError() << endl;
-    return 1;
-  }
-  driver.renderer =
-    SDL_CreateRenderer(driver.window, -1, SDL_RENDERER_ACCELERATED);
-  if (driver.renderer == nullptr) {
-    cerr << SDL_GetError() << endl;
-    return 1;
-  }
-  if (argc == 2) {
-    driver.subject = make_unique<pix::Subject>(pix::Subject::load(argv[1]));
-  } else {
-    driver.subject = make_unique<pix::Subject>(pix::Subject::create(800, 600));
-  }
-  driver.texture = SDL_CreateTexture(driver.renderer,
-                                     SDL_PIXELFORMAT_ARGB8888,
-                                     SDL_TEXTUREACCESS_STREAMING,
-                                     800,
-                                     600);
-
-  SDL_Event ev;
-  while (SDL_WaitEvent(&ev)) {
-    bool dirty = false;
-    switch (ev.type) {
-      case SDL_QUIT:
-        return 0;
-      case SDL_WINDOWEVENT:
-        if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-          auto newW = ev.window.data1;
-          auto newH = ev.window.data2;
-          int  oldW, oldH;
-          SDL_QueryTexture(driver.texture, nullptr, nullptr, &oldW, &oldH);
-          if (oldW != newW || oldH != newH) {
-            driver.texture = SDL_CreateTexture(driver.renderer,
-                                               SDL_PIXELFORMAT_ARGB8888,
-                                               SDL_TEXTUREACCESS_STREAMING,
-                                               newW,
-                                               newH);
-          }
-        }
-        dirty = true;
-        break;
-      case SDL_KEYDOWN:
-        if (ev.key.keysym.sym == SDLK_TAB) {
-          auto command = driver.inputCommand("Type a command");
-          if (command.size() > 0) {
-            if (command[0] == 's') {
-              if (command.size() == 1) {
-                driver.subject->save("./test.png");
-              } else {
-                driver.subject->save(command.substr(1).c_str());
-              }
-            } else if (command[0] == 'q') {
-              return 0;
-            } else if (command[0] == 'l') {
-              driver.subject = make_unique<pix::Subject>(
-                pix::Subject::load(command.substr(1).c_str()));
-              dirty = true;
-            } else {
-              cout << "Invalid command: \n" << command << endl;
-            }
-          }
-        }
-        break;
-      case SDL_MOUSEBUTTONDOWN:
-        dirty |= driver.subject->clickDown(
-          ev.button.x,
-          ev.button.y,
-          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
-        break;
-      case SDL_MOUSEBUTTONUP:
-        dirty |= driver.subject->clickUp(
-          ev.button.x,
-          ev.button.y,
-          pix::Button(ev.button.button - SDL_BUTTON_LEFT));
-        break;
-      case SDL_MOUSEMOTION:
-        dirty |= driver.subject->move(ev.motion.x, ev.motion.y);
-        break;
-      case SDL_DROPFILE:
-        driver.subject =
-          make_unique<pix::Subject>(pix::Subject::load(ev.drop.file));
-        dirty = true;
-        break;
+  try {
+    Driver    driver{800, 600, (argc > 1 ? argv[argc - 1] : nullptr)};
+    SDL_Event ev;
+    while (SDL_WaitEvent(&ev)) {
+      if (driver.handle(ev)) {
+        driver.render();
+      }
     }
-    if (dirty) {
-      SDL_SetRenderDrawColor(driver.renderer, 127, 127, 127, 255);
-      SDL_RenderClear(driver.renderer);
-      driver.redraw();
-      SDL_RenderPresent(driver.renderer);
-    }
+  } catch (exception& e) {
+    cerr << e.what() << endl;
+    return 1;
   }
 
   return 0;
+}
+
+Driver::Driver(unsigned w, unsigned h, const char* filename)
+{
+  window = SDL_CreateWindow("Pix",
+                            SDL_WINDOWPOS_UNDEFINED,
+                            SDL_WINDOWPOS_UNDEFINED,
+                            800,
+                            600,
+                            SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+  if (window == nullptr) {
+    throw runtime_error(SDL_GetError());
+  }
+  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  if (renderer == nullptr) {
+    throw runtime_error(SDL_GetError());
+  }
+  if (filename != nullptr) {
+    subject = make_unique<pix::Subject>(pix::Subject::load(filename));
+  } else {
+    subject = make_unique<pix::Subject>(pix::Subject::create(w, h));
+  }
+  texture = SDL_CreateTexture(
+    renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
 }
 
 Driver::~Driver()
@@ -144,6 +87,83 @@ Driver::~Driver()
   if (window) {
     SDL_DestroyWindow(window);
   }
+}
+
+bool
+Driver::handle(const SDL_Event& ev)
+{
+  bool dirty = false;
+  switch (ev.type) {
+    case SDL_QUIT:
+      return 0;
+    case SDL_WINDOWEVENT:
+      if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+        auto newW = ev.window.data1;
+        auto newH = ev.window.data2;
+        int  oldW, oldH;
+        SDL_QueryTexture(texture, nullptr, nullptr, &oldW, &oldH);
+        if (oldW != newW || oldH != newH) {
+          texture = SDL_CreateTexture(renderer,
+                                      SDL_PIXELFORMAT_ARGB8888,
+                                      SDL_TEXTUREACCESS_STREAMING,
+                                      newW,
+                                      newH);
+        }
+      }
+      dirty = true;
+      break;
+    case SDL_KEYDOWN:
+      if (ev.key.keysym.sym == SDLK_TAB) {
+        auto command = inputCommand("Type a command");
+        if (command.size() > 0) {
+          if (command[0] == 's') {
+            if (command.size() == 1) {
+              subject->save("./test.png");
+            } else {
+              subject->save(command.substr(1).c_str());
+            }
+          } else if (command[0] == 'q') {
+            return 0;
+          } else if (command[0] == 'l') {
+            subject = make_unique<pix::Subject>(
+              pix::Subject::load(command.substr(1).c_str()));
+            dirty = true;
+          } else {
+            cout << "Invalid command: \n" << command << endl;
+          }
+        }
+      }
+      break;
+    case SDL_MOUSEBUTTONDOWN:
+      dirty |=
+        subject->clickDown(ev.button.x,
+                           ev.button.y,
+                           pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+      break;
+    case SDL_MOUSEBUTTONUP:
+      dirty |=
+        subject->clickUp(ev.button.x,
+                         ev.button.y,
+                         pix::Button(ev.button.button - SDL_BUTTON_LEFT));
+      break;
+    case SDL_MOUSEMOTION:
+      dirty |= subject->move(ev.motion.x, ev.motion.y);
+      break;
+    case SDL_DROPFILE:
+      subject = make_unique<pix::Subject>(pix::Subject::load(ev.drop.file));
+      dirty   = true;
+      break;
+  }
+  return dirty;
+}
+
+void
+Driver::render() const
+{
+  SDL_SetRenderDrawColor(renderer, 127, 127, 127, 255);
+  SDL_RenderClear(renderer);
+  redraw();
+  SDL_RenderPresent(renderer);
 }
 
 void
