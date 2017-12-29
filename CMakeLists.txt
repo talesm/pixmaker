@@ -26,7 +26,12 @@ find_package(KiWi REQUIRED)
 # set_property(TARGET KiWi PROPERTY IMPORTED_LOCATION ${BINARY_DIR}/src/libKiWi.so)
 # add_dependencies(KiWi KiWi_project)
 
-add_executable(pix src/driver)
+add_executable(pix 
+    src/Driver-inputCommand
+    src/Driver
+    src/main
+)
+
 target_include_directories(pix 
 PRIVATE 
     /usr/include/SDL2

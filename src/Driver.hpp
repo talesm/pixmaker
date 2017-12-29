@@ -8,6 +8,13 @@ namespace pix {
 class Subject;
 }
 
+enum class EventResult
+{
+  NOTHING,
+  DIRTY_WINDOW,
+  CLOSE_WINDOW
+};
+
 class Driver
 {
   SDL_Window*                   window   = nullptr;
@@ -22,8 +29,8 @@ public:
    * @brief Handles the event.
    * @return true if it need to be redrawn;
    */
-  bool handle(const SDL_Event& ev);
-  void render() const;
+  EventResult handle(const SDL_Event& ev);
+  void        render() const;
 
 private:
   void        redraw() const;
