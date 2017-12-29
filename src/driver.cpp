@@ -100,6 +100,11 @@ main(int argc, char** argv)
       case SDL_MOUSEMOTION:
         dirty |= driver.subject->move(ev.motion.x, ev.motion.y);
         break;
+      case SDL_DROPFILE:
+        driver.subject =
+          make_unique<pix::Subject>(pix::Subject::load(ev.drop.file));
+        dirty = true;
+        break;
     }
     if (dirty) {
       SDL_SetRenderDrawColor(driver.renderer, 127, 127, 127, 255);
