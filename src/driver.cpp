@@ -1,28 +1,10 @@
+#include "Driver.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <SDL.h>
 #include "Subject.hpp"
 
 using namespace std;
-
-struct Driver
-{
-  SDL_Window*              window   = nullptr;
-  SDL_Renderer*            renderer = nullptr;
-  SDL_Texture*             texture  = nullptr;
-  unique_ptr<pix::Subject> subject;
-
-  Driver(unsigned w, unsigned h, const char* filename = nullptr);
-  ~Driver();
-  /**
-   * @brief Handles the event.
-   * @return true if it need to be redrawn;
-   */
-  bool   handle(const SDL_Event& ev);
-  void   render() const;
-  void   redraw() const;
-  string inputCommand(const string& prompt) const;
-};
 
 int
 main(int argc, char** argv)
