@@ -32,6 +32,7 @@ public:
   Subject& operator=(Subject&&);
 
   static Subject create(unsigned w, unsigned h);
+  static Subject load(const char* file);
 
   bool clickDown(float x, float y, Button button);
   bool clickUp(float x, float y, Button button);

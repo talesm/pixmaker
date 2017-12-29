@@ -39,6 +39,23 @@ Subject::create(unsigned w, unsigned h)
   return Subject(std::move(detail));
 }
 
+Subject
+Subject::load(const char* file)
+{
+  auto tempSurface = cairo_image_surface_create_from_png(file);
+  if (!tempSurface) {
+    throw new std::runtime_error("Invalid");
+  }
+  auto w       = cairo_image_surface_get_width(tempSurface);
+  auto h       = cairo_image_surface_get_height(tempSurface);
+  auto subject = Subject::create(w, h);
+  cairo_set_source_surface(subject.detail->cr, tempSurface, 0, 0);
+  cairo_paint(subject.detail->cr);
+  cairo_surface_destroy(tempSurface);
+  cairo_set_source_rgb(subject.detail->cr, 0, 0, 0);
+  return subject;
+}
+
 static bool  mouseDown = false;
 static float old_x, old_y;
 
