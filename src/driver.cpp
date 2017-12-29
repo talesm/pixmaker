@@ -61,6 +61,19 @@ main(int argc, char** argv)
       case SDL_QUIT:
         return 0;
       case SDL_WINDOWEVENT:
+        if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+          auto newW = ev.window.data1;
+          auto newH = ev.window.data2;
+          int  oldW, oldH;
+          SDL_QueryTexture(driver.texture, nullptr, nullptr, &oldW, &oldH);
+          if (oldW != newW || oldH != newH) {
+            driver.texture = SDL_CreateTexture(driver.renderer,
+                                               SDL_PIXELFORMAT_ARGB8888,
+                                               SDL_TEXTUREACCESS_STREAMING,
+                                               newW,
+                                               newH);
+          }
+        }
         dirty = true;
         break;
       case SDL_KEYDOWN:
