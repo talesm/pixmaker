@@ -40,3 +40,5 @@ PRIVATE
     SDL2_ttf
     SDL2
 )
+
+add_definitions(-Wall -Werror)
