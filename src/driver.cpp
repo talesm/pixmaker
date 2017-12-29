@@ -43,8 +43,11 @@ main(int argc, char** argv)
     cerr << SDL_GetError() << endl;
     return 1;
   }
-
-  driver.subject = make_unique<pix::Subject>(pix::Subject::create(800, 600));
+  if (argc == 2) {
+    driver.subject = make_unique<pix::Subject>(pix::Subject::load(argv[1]));
+  } else {
+    driver.subject = make_unique<pix::Subject>(pix::Subject::create(800, 600));
+  }
   driver.texture = SDL_CreateTexture(driver.renderer,
                                      SDL_PIXELFORMAT_ARGB8888,
                                      SDL_TEXTUREACCESS_STREAMING,
