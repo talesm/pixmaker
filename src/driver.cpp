@@ -72,6 +72,10 @@ main(int argc, char** argv)
               }
             } else if (command[0] == 'q') {
               return 0;
+            } else if (command[0] == 'l') {
+              driver.subject = make_unique<pix::Subject>(
+                pix::Subject::load(command.substr(1).c_str()));
+              dirty = true;
             } else {
               cout << "Invalid command: \n" << command << endl;
             }
@@ -129,8 +133,8 @@ Driver::redraw() const
                       unsigned char        bpp,
                       unsigned             stride,
                       const unsigned char* pixels) {
-    SDL_UpdateTexture(texture, nullptr, pixels, stride);
-    SDL_Rect rect{0, 0, 800, 600};
+    SDL_Rect rect{0, 0, int(w), int(h)};
+    SDL_UpdateTexture(texture, &rect, pixels, stride);
     SDL_RenderCopy(renderer, texture, &rect, &rect);
   });
 }
@@ -174,13 +178,9 @@ Driver::inputCommand(const string& prompt) const
   KW_Widget* frame = KW_CreateFrame(gui, NULL, &framerect);
 
   /* Create the title, label and edibox widgets */
-  KW_Rect  titlerect   = {10, 10, 280, 30};
-  KW_Rect  labelrect   = {10, 50, 280, 30};
-  KW_Rect  editboxrect = {10, 100, 280, 40};
-  KW_Rect* rects[]     = {&labelrect, &editboxrect};
-  // unsigned weights[]   = {1, 4};
-  // KW_RectFillParentHorizontally(
-  //   &framerect, rects, weights, 2, 10, KW_RECT_ALIGN_MIDDLE);
+  KW_Rect titlerect   = {10, 10, 280, 30};
+  KW_Rect labelrect   = {10, 50, 280, 30};
+  KW_Rect editboxrect = {10, 100, 280, 40};
   KW_CreateLabel(gui, frame, "Input command", &titlerect);
   KW_CreateLabel(gui, frame, prompt.c_str(), &labelrect);
 
@@ -205,7 +205,7 @@ Driver::inputCommand(const string& prompt) const
 
   /* free stuff */
   KW_Quit(gui);
-  KW_ReleaseSurface(driver, set);
-  KW_ReleaseRenderDriver(driver);
+  // KW_ReleaseSurface(driver, set);
+  // KW_ReleaseRenderDriver(driver);
   return input;
 }
