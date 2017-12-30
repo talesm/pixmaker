@@ -1,85 +1,110 @@
 #include "CommandInput.hpp"
-#include <KW_button.h>
-#include <KW_editbox.h>
-#include <KW_frame.h>
-#include <KW_gui.h>
-#include <KW_label.h>
-#include <KW_renderdriver_sdl2.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
 #include "Driver.hpp"
 
 using namespace std;
 
-/* Callback for when the OK button is clicked */
-static bool quit = false;
-static void
-OKClicked(KW_Widget* widget, int b)
+static const int W = 400, H = 50;
+
+CommandInput::CommandInput(SDL_Window* parentWindow)
+  : parentWindow(parentWindow)
 {
-  quit = true;
-}
-
-static void
-EnterPressed(KW_Widget* widget, SDL_Keycode sym, SDL_Scancode code)
-{
-  if (sym == SDLK_KP_ENTER || sym == SDLK_RETURN) {
-    quit = true;
-  }
-}
-
-CommandInput::CommandInput(SDL_Renderer* renderer, SDL_Window* window)
-  : renderer(renderer)
-  , window(window)
-{
-  /* Initialize KiWi */
-  driver = KW_CreateSDL2RenderDriver(renderer, window);
-  set    = KW_LoadSurface(driver, "res/tileset.png");
-  gui    = KW_Init(driver, set);
-
-  /* Create the top-level framve */
-  KW_Rect windowrect = {0, 0, 800, 600};
-  KW_Rect framerect  = {10, 10, 300, 220};
-  KW_RectCenterInParent(&windowrect, &framerect);
-  KW_Widget* frame = KW_CreateFrame(gui, NULL, &framerect);
-
-  /* Create the title, label and edibox widgets */
-  KW_Rect titlerect   = {10, 10, 280, 30};
-  KW_Rect labelrect   = {10, 50, 280, 30};
-  KW_Rect editboxrect = {10, 100, 280, 40};
-  KW_CreateLabel(gui, frame, "Input command", &titlerect);
-  promptlabel = KW_CreateLabel(gui, frame, "prompt", &labelrect);
-
-  editbox = KW_CreateEditbox(gui, frame, "", &editboxrect);
-  KW_AddWidgetKeyUpHandler(editbox, EnterPressed);
-
-  KW_Rect    buttonrect = {250, 170, 40, 40};
-  KW_Widget* okbutton = KW_CreateButtonAndLabel(gui, frame, "OK", &buttonrect);
-  KW_AddWidgetMouseDownHandler(okbutton, OKClicked);
+  TTF_Init();
+  font = TTF_OpenFont("res/FreeMono.ttf", 16);
 }
 
 CommandInput::~CommandInput()
 {
-  KW_Quit(gui);
-  KW_ReleaseSurface(driver, set);
-  KW_ReleaseRenderDriver(driver);
+  TTF_CloseFont(font);
 }
 
 string
 CommandInput::input(const string& prompt) const
 {
-  quit = false;
-  KW_SetLabelText(promptlabel, prompt.c_str());
-  KW_SetEditboxText(editbox, "");
-  KW_SetFocusedWidget(editbox);
 
-  /* Main loop */
-  while (!SDL_QuitRequested() && !quit) {
-    SDL_RenderClear(renderer);
-    KW_ProcessEvents(gui);
-    // redraw();
-    KW_Paint(gui);
-    SDL_RenderPresent(renderer);
-    SDL_Delay(1);
+  auto window   = SDL_CreateWindow(prompt.c_str(),
+                                 SDL_WINDOWPOS_CENTERED,
+                                 SDL_WINDOWPOS_CENTERED,
+                                 W,
+                                 H,
+                                 SDL_WINDOW_SHOWN);
+  auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+  auto windowId = SDL_GetWindowID(window);
+  auto parentId = SDL_GetWindowID(parentWindow);
+  SDL_SetWindowModalFor(window, parentWindow);
+  SDL_Texture* textTex = nullptr;
+
+  SDL_Event ev;
+  string    input;
+  bool      dirty = true;
+  bool      quit  = false;
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+  SDL_StartTextInput();
+  while (!quit && !SDL_QuitRequested() && SDL_WaitEvent(&ev)) {
+    switch (ev.type) {
+      case SDL_KEYDOWN:
+        if (ev.key.keysym.sym == SDLK_ESCAPE) {
+          input = "";
+          quit  = true;
+        } else if (ev.key.keysym.sym == SDLK_RETURN ||
+                   ev.key.keysym.sym == SDLK_KP_ENTER) {
+          quit = true;
+        } else if (ev.key.keysym.sym == SDLK_BACKSPACE) {
+          if (input.size() > 0) {
+            input.pop_back();
+            dirty = true;
+          }
+        }
+        break;
+      case SDL_WINDOWEVENT:
+        if (ev.window.windowID == windowId) {
+          switch (ev.window.event) {
+            case SDL_WINDOWEVENT_CLOSE:
+              input = "";
+              quit  = true;
+              break;
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+            case SDL_WINDOWEVENT_ENTER:
+            case SDL_WINDOWEVENT_SHOWN:
+              dirty = true;
+              break;
+          }
+        } else if (ev.window.windowID == parentId &&
+                   (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED ||
+                    ev.window.event == SDL_WINDOWEVENT_ENTER)) {
+          SDL_RaiseWindow(window);
+        }
+        break;
+      case SDL_TEXTINPUT:
+        input += ev.text.text;
+        dirty = true;
+        break;
+    }
+    if (dirty) {
+      SDL_SetRenderDrawColor(renderer, 224, 224, 224, 255);
+      SDL_RenderClear(renderer);
+      if (input.size() > 0) {
+        auto textSurface =
+          TTF_RenderUTF8_Blended(font, input.c_str(), {0, 0, 0, 255});
+        if (!textSurface) {
+          throw runtime_error(SDL_GetError());
+        }
+        SDL_DestroyTexture(textTex);
+        textTex = SDL_CreateTextureFromSurface(renderer, textSurface);
+        SDL_Rect rect{
+          0, H / 2 - textSurface->h / 2, textSurface->w, textSurface->h};
+        SDL_FreeSurface(textSurface);
+        SDL_RenderCopy(renderer, textTex, nullptr, &rect);
+      }
+      SDL_RenderPresent(renderer);
+    }
   }
-  string input = KW_GetEditboxText(editbox);
+  SDL_StopTextInput();
+  SDL_DestroyTexture(textTex);
+
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
 
   /* free stuff */
   return input;

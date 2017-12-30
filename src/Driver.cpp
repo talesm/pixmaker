@@ -29,7 +29,7 @@ Driver::Driver(unsigned w, unsigned h, const char* filename)
   texture = SDL_CreateTexture(
     renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
 
-  commandInput = make_unique<CommandInput>(renderer, window);
+  commandInput = make_unique<CommandInput>(window);
 }
 
 Driver::~Driver()
@@ -71,6 +71,8 @@ Driver::handle(const SDL_Event& ev)
                                       newW,
                                       newH);
         }
+      } else if (ev.window.event == SDL_WINDOWEVENT_CLOSE) {
+        return EventResult::CLOSE_WINDOW;
       }
       dirty = true;
       break;
