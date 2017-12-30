@@ -9,13 +9,6 @@
 
 using namespace std;
 
-CommandInput::CommandInput(SDL_Renderer* renderer, SDL_Window* window)
-  : renderer(renderer)
-  , window(window)
-{}
-
-CommandInput::~CommandInput() {}
-
 /* Callback for when the OK button is clicked */
 static bool quit = false;
 static void
@@ -31,14 +24,15 @@ EnterPressed(KW_Widget* widget, SDL_Keycode sym, SDL_Scancode code)
     quit = true;
   }
 }
-string
-CommandInput::input(const string& prompt) const
+
+CommandInput::CommandInput(SDL_Renderer* renderer, SDL_Window* window)
+  : renderer(renderer)
+  , window(window)
 {
-  quit = false;
   /* Initialize KiWi */
-  KW_RenderDriver* driver = KW_CreateSDL2RenderDriver(renderer, window);
-  KW_Surface*      set    = KW_LoadSurface(driver, "res/tileset.png");
-  KW_GUI*          gui    = KW_Init(driver, set);
+  driver = KW_CreateSDL2RenderDriver(renderer, window);
+  set    = KW_LoadSurface(driver, "res/tileset.png");
+  gui    = KW_Init(driver, set);
 
   /* Create the top-level framve */
   KW_Rect windowrect = {0, 0, 800, 600};
@@ -51,15 +45,30 @@ CommandInput::input(const string& prompt) const
   KW_Rect labelrect   = {10, 50, 280, 30};
   KW_Rect editboxrect = {10, 100, 280, 40};
   KW_CreateLabel(gui, frame, "Input command", &titlerect);
-  KW_CreateLabel(gui, frame, prompt.c_str(), &labelrect);
+  promptlabel = KW_CreateLabel(gui, frame, "prompt", &labelrect);
 
-  auto editbox = KW_CreateEditbox(gui, frame, "", &editboxrect);
+  editbox = KW_CreateEditbox(gui, frame, "", &editboxrect);
   KW_AddWidgetKeyUpHandler(editbox, EnterPressed);
-  KW_SetFocusedWidget(editbox);
 
   KW_Rect    buttonrect = {250, 170, 40, 40};
   KW_Widget* okbutton = KW_CreateButtonAndLabel(gui, frame, "OK", &buttonrect);
   KW_AddWidgetMouseDownHandler(okbutton, OKClicked);
+}
+
+CommandInput::~CommandInput()
+{
+  KW_Quit(gui);
+  KW_ReleaseSurface(driver, set);
+  KW_ReleaseRenderDriver(driver);
+}
+
+string
+CommandInput::input(const string& prompt) const
+{
+  quit = false;
+  KW_SetLabelText(promptlabel, prompt.c_str());
+  KW_SetEditboxText(editbox, "");
+  KW_SetFocusedWidget(editbox);
 
   /* Main loop */
   while (!SDL_QuitRequested() && !quit) {
@@ -73,8 +82,5 @@ CommandInput::input(const string& prompt) const
   string input = KW_GetEditboxText(editbox);
 
   /* free stuff */
-  KW_Quit(gui);
-  // KW_ReleaseSurface(driver, set);
-  // KW_ReleaseRenderDriver(driver);
   return input;
 }
