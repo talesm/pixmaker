@@ -30,7 +30,7 @@ find_package(KiWi REQUIRED)
 # add_dependencies(KiWi KiWi_project)
 
 add_executable(pix 
-    src/Driver-inputCommand
+    src/CommandInput
     src/Driver
     src/main
 )
