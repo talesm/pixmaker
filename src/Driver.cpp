@@ -1,6 +1,7 @@
 #include "Driver.hpp"
 #include <iostream>
 #include <SDL.h>
+#include "CommandInput.hpp"
 #include "Subject.hpp"
 
 using namespace std;
