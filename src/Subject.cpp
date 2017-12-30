@@ -1,5 +1,6 @@
 #include "Subject.hpp"
 #include <cairo.h>
+#include "SourceDetail.hpp"
 
 using namespace std;
 
@@ -8,6 +9,11 @@ struct SubjectDetail
 {
   cairo_surface_t* surface;
   cairo_t*         cr;
+  Source           source;
+
+  SubjectDetail()
+    : source(Source::FromColorName("black"))
+  {}
 };
 
 Subject::Subject(std::unique_ptr<SubjectDetail> detail)
@@ -110,5 +116,18 @@ Subject::save(const char* path) const
   if (status != CAIRO_STATUS_SUCCESS) {
     exit(status); // TODO: Error handling.
   }
+}
+
+void
+Subject::source(Source&& value)
+{
+  detail->source = std::move(value);
+  detail->source.detail->apply(detail->cr);
+}
+
+const Source&
+Subject::source() const
+{
+  return detail->source;
 }
 }

@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.3)
 project(pix)
 
-add_library(pix_core src/Subject)
+add_library(pix_core 
+    src/Source
+    src/Subject
+)
 target_include_directories(pix_core PRIVATE /usr/include/cairo) #TODO: Put something platform independent.
 target_link_libraries(pix_core PRIVATE cairo)
 

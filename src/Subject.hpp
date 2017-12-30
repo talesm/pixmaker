@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include "Source.hpp"
 
 namespace pix {
 
@@ -52,5 +53,8 @@ public:
    * Save with the internal format.
    */
   void save(const char* path) const;
+
+  void          source(Source&& value);
+  const Source& source() const;
 };
 }
