@@ -3,11 +3,11 @@
 #include <memory>
 #include <string>
 #include <SDL.h>
-#include "CommandInput.hpp"
 
 namespace pix {
 class Subject;
 }
+class CommandInput;
 
 enum class EventResult
 {
