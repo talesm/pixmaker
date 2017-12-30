@@ -84,6 +84,8 @@ Driver::handle(const SDL_Event& ev)
             subject = make_unique<pix::Subject>(
               pix::Subject::load(command.substr(1).c_str()));
             dirty = true;
+          } else if (command[0] == 'c') {
+            subject->source(pix::Source::FromColorName(command.substr(1)));
           } else {
             cout << "Invalid command: \n" << command << endl;
           }
