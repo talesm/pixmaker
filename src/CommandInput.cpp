@@ -1,12 +1,20 @@
+#include "CommandInput.hpp"
+#include <KW_button.h>
+#include <KW_editbox.h>
+#include <KW_frame.h>
+#include <KW_gui.h>
+#include <KW_label.h>
+#include <KW_renderdriver_sdl2.h>
 #include "Driver.hpp"
-#include "KW_button.h"
-#include "KW_editbox.h"
-#include "KW_frame.h"
-#include "KW_gui.h"
-#include "KW_label.h"
-#include "KW_renderdriver_sdl2.h"
 
 using namespace std;
+
+CommandInput::CommandInput(SDL_Renderer* renderer, SDL_Window* window)
+  : renderer(renderer)
+  , window(window)
+{}
+
+CommandInput::~CommandInput() {}
 
 /* Callback for when the OK button is clicked */
 static bool quit = false;
@@ -24,7 +32,7 @@ EnterPressed(KW_Widget* widget, SDL_Keycode sym, SDL_Scancode code)
   }
 }
 string
-Driver::inputCommand(const string& prompt) const
+CommandInput::input(const string& prompt) const
 {
   quit = false;
   /* Initialize KiWi */
@@ -57,7 +65,7 @@ Driver::inputCommand(const string& prompt) const
   while (!SDL_QuitRequested() && !quit) {
     SDL_RenderClear(renderer);
     KW_ProcessEvents(gui);
-    redraw();
+    // redraw();
     KW_Paint(gui);
     SDL_RenderPresent(renderer);
     SDL_Delay(1);

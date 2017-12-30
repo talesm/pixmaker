@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <SDL.h>
+#include "CommandInput.hpp"
 
 namespace pix {
 class Subject;
@@ -17,11 +18,6 @@ enum class EventResult
 
 class Driver
 {
-  SDL_Window*                   window   = nullptr;
-  SDL_Renderer*                 renderer = nullptr;
-  SDL_Texture*                  texture  = nullptr;
-  std::unique_ptr<pix::Subject> subject;
-
 public:
   Driver(unsigned w, unsigned h, const char* filename = nullptr);
   ~Driver();
@@ -33,6 +29,11 @@ public:
   void        render() const;
 
 private:
-  void        redraw() const;
-  std::string inputCommand(const std::string& prompt) const;
+  SDL_Window*                   window   = nullptr;
+  SDL_Renderer*                 renderer = nullptr;
+  SDL_Texture*                  texture  = nullptr;
+  std::unique_ptr<pix::Subject> subject;
+  std::unique_ptr<CommandInput> commandInput;
+
+  void redraw() const;
 };
