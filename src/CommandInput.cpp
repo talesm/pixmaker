@@ -55,6 +55,10 @@ CommandInput::input(const string& prompt) const
             input.pop_back();
             dirty = true;
           }
+        } else if (ev.key.keysym.sym == SDLK_v) {
+          if (ev.key.keysym.mod & KMOD_CTRL && SDL_HasClipboardText()) {
+            input += SDL_GetClipboardText();
+          }
         }
         break;
       case SDL_WINDOWEVENT:
