@@ -18,7 +18,7 @@ public:
   /**
    * @brief Generate
    *
-   * @param colorName one of CSS2 Color names
+   * @param colorName one of CSS2 Color names or #rgb.
    * @return Source
    */
   static Source FromColorName(const std::string& colorName);
