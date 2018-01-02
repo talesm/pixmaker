@@ -7,16 +7,40 @@ using namespace std;
 namespace pix {
 struct SubjectDetail
 {
-  cairo_surface_t* targetSurface = nullptr;
-  cairo_t*         targetCr      = nullptr;
+  cairo_surface_t* targetSurface  = nullptr;
+  cairo_t*         targetCr       = nullptr;
+  cairo_surface_t* previewSurface = nullptr;
+  cairo_t*         previewCr      = nullptr;
   Source           source;
 
   SubjectDetail()
-    : source(Source::FromColorName("black"))
+    : SubjectDetail(nullptr)
   {}
+
+  SubjectDetail(cairo_surface_t* targetSurface)
+    : targetSurface(targetSurface)
+    , source(Source::FromColorName("black"))
+  {
+    if (targetSurface) {
+      targetCr       = cairo_create(targetSurface);
+      auto w         = cairo_image_surface_get_width(targetSurface);
+      auto h         = cairo_image_surface_get_height(targetSurface);
+      previewSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+      previewCr      = cairo_create(previewSurface);
+    }
+  }
+
+  cairo_surface_t* render() const
+  {
+    cairo_set_source_surface(previewCr, targetSurface, 0, 0);
+    cairo_paint(previewCr);
+    return previewSurface;
+  }
 
   ~SubjectDetail()
   {
+    cairo_destroy(previewCr);
+    cairo_surface_destroy(previewSurface);
     cairo_destroy(targetCr);
     cairo_surface_destroy(targetSurface);
   }
@@ -35,10 +59,8 @@ Subject::operator=(Subject&&) = default;
 Subject
 Subject::create(unsigned w, unsigned h)
 {
-  auto detail = make_unique<SubjectDetail>();
-  detail->targetSurface =
-    cairo_image_surface_create(CAIRO_FORMAT_ARGB32, int(w), int(h));
-  detail->targetCr = cairo_create(detail->targetSurface);
+  auto detail = make_unique<SubjectDetail>(
+    cairo_image_surface_create(CAIRO_FORMAT_ARGB32, int(w), int(h)));
   cairo_set_source_rgb(detail->targetCr, 1, 1, 1);
   cairo_paint(detail->targetCr);
   cairo_set_source_rgb(detail->targetCr, 0, 0, 0);
@@ -48,18 +70,8 @@ Subject::create(unsigned w, unsigned h)
 Subject
 Subject::load(const char* file)
 {
-  auto tempSurface = cairo_image_surface_create_from_png(file);
-  if (!tempSurface) {
-    throw new std::runtime_error("Invalid");
-  }
-  auto w       = cairo_image_surface_get_width(tempSurface);
-  auto h       = cairo_image_surface_get_height(tempSurface);
-  auto subject = Subject::create(w, h);
-  cairo_set_source_surface(subject.detail->targetCr, tempSurface, 0, 0);
-  cairo_paint(subject.detail->targetCr);
-  cairo_surface_destroy(tempSurface);
-  cairo_set_source_rgb(subject.detail->targetCr, 0, 0, 0);
-  return subject;
+  return Subject(
+    make_unique<SubjectDetail>(cairo_image_surface_create_from_png(file)));
 }
 
 static bool  mouseDown = false;
@@ -101,11 +113,12 @@ Subject::move(float x, float y)
 void
 Subject::render(const Renderer& renderer) const
 {
-  cairo_surface_flush(detail->targetSurface);
-  auto data   = cairo_image_surface_get_data(detail->targetSurface);
-  auto w      = cairo_image_surface_get_width(detail->targetSurface);
-  auto h      = cairo_image_surface_get_height(detail->targetSurface);
-  auto stride = cairo_image_surface_get_stride(detail->targetSurface);
+  detail->render();
+  cairo_surface_flush(detail->previewSurface);
+  auto data   = cairo_image_surface_get_data(detail->previewSurface);
+  auto w      = cairo_image_surface_get_width(detail->previewSurface);
+  auto h      = cairo_image_surface_get_height(detail->previewSurface);
+  auto stride = cairo_image_surface_get_stride(detail->previewSurface);
   renderer(w, h, 32, stride, data);
 }
 
