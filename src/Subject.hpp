@@ -3,6 +3,8 @@
 #include <memory>
 #include "Source.hpp"
 
+typedef struct _cairo cairo_t; // Forward declaration. Ignore
+
 namespace pix {
 
 enum class Button : uint8_t; // Forward decl. Ignore this
@@ -13,6 +15,9 @@ struct SubjectDetail;        // Forward decl. Ignore this
  */
 class Subject
 {
+private:
+  Subject(std::unique_ptr<SubjectDetail> detail);
+
 public:
   ~Subject();
   Subject(const Subject&) = delete;
@@ -46,7 +51,12 @@ public:
   const Source& source() const;
 
 private:
+  using Action = std::function<void(cairo_t*)>;
+  void preview(Action action);
+  void execute(Action action);
+  friend class ToolContext;
+
+private:
   std::unique_ptr<SubjectDetail> detail;
-  Subject(std::unique_ptr<SubjectDetail> detail);
 };
 }

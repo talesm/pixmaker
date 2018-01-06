@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.3)
 project(pix)
 
 add_library(pix_core 
+    src/BrushTool
     src/Source
     src/Subject
+    src/ToolContext
 )
 target_include_directories(pix_core PRIVATE /usr/include/cairo) #TODO: Put something platform independent.
 target_link_libraries(pix_core PRIVATE cairo)

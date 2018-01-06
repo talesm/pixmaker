@@ -1,17 +1,22 @@
 #include "Subject.hpp"
 #include <cairo.h>
+#include "BrushTool.hpp"
 #include "SourceDetail.hpp"
+#include "Tool.hpp"
+#include "ToolContext.hpp"
 
 using namespace std;
 
 namespace pix {
 struct SubjectDetail
 {
-  cairo_surface_t* targetSurface  = nullptr;
-  cairo_t*         targetCr       = nullptr;
-  cairo_surface_t* previewSurface = nullptr;
-  cairo_t*         previewCr      = nullptr;
-  Source           source;
+  cairo_surface_t*      targetSurface  = nullptr;
+  cairo_t*              targetCr       = nullptr;
+  bool                  targetChanged  = true;
+  cairo_surface_t*      previewSurface = nullptr;
+  cairo_t*              previewCr      = nullptr;
+  Source                source;
+  std::unique_ptr<Tool> tool = make_unique<BrushTool>();
 
   SubjectDetail()
     : SubjectDetail(nullptr)
@@ -74,40 +79,32 @@ Subject::load(const char* file)
     make_unique<SubjectDetail>(cairo_image_surface_create_from_png(file)));
 }
 
-static bool  mouseDown = false;
-static float old_x, old_y;
-
 bool
 Subject::clickDown(float x, float y, Button button)
 {
-  cairo_move_to(detail->targetCr, x, y);
-  old_x = x;
-  old_y = y;
-  cairo_stroke(detail->targetCr);
-  mouseDown = true;
-  return true;
+  if (!detail->tool) {
+    return false;
+  }
+
+  return detail->tool->clickDown(ClickContext{*this, x, y, button});
 }
 
 bool
 Subject::clickUp(float x, float y, Button button)
 {
-  mouseDown = false;
-  return true;
+  if (!detail->tool) {
+    return false;
+  }
+  return detail->tool->clickUp(ClickContext{*this, x, y, button});
 }
 
 bool
 Subject::move(float x, float y)
 {
-  if (mouseDown) {
-    cairo_move_to(detail->targetCr, old_x, old_y);
-    cairo_line_to(detail->targetCr, x, y);
-    old_x = x;
-    old_y = y;
-
-    cairo_stroke(detail->targetCr);
-    return true;
+  if (!detail->tool) {
+    return false;
   }
-  return false;
+  return detail->tool->move(MoveContext{*this, x, y});
 }
 
 void
@@ -142,5 +139,16 @@ const Source&
 Subject::source() const
 {
   return detail->source;
+}
+
+void
+Subject::preview(Action action)
+{}
+
+void
+Subject::execute(Action action)
+{
+  action(detail->targetCr);
+  detail->targetChanged = true;
 }
 }
