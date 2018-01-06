@@ -146,6 +146,18 @@ Subject::source() const
 }
 
 void
+Subject::tool(unique_ptr<Tool> value)
+{
+  detail->tool = std::move(value);
+}
+
+const Tool&
+Subject::tool() const
+{
+  return *detail->tool;
+}
+
+void
 Subject::preview(Action action)
 {
   detail->previewChanged = true;

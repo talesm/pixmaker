@@ -9,6 +9,7 @@ namespace pix {
 
 enum class Button : uint8_t; // Forward decl. Ignore this
 struct SubjectDetail;        // Forward decl. Ignore this
+struct Tool;                 // Forward decl. Ignore this
 
 /**
  * @brief Represents a drawable target.
@@ -49,6 +50,8 @@ public:
 
   void          source(Source&& value);
   const Source& source() const;
+  void          tool(std::unique_ptr<Tool> value);
+  const Tool&   tool() const;
 
 private:
   using Action = std::function<void(cairo_t*)>;
