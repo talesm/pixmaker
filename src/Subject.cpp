@@ -15,6 +15,7 @@ struct SubjectDetail
   bool                  targetChanged  = true;
   cairo_surface_t*      previewSurface = nullptr;
   cairo_t*              previewCr      = nullptr;
+  bool                  previewChanged = true;
   Source                source;
   std::unique_ptr<Tool> tool = make_unique<BrushTool>();
 
@@ -35,11 +36,14 @@ struct SubjectDetail
     }
   }
 
-  cairo_surface_t* render() const
+  void render()
   {
-    cairo_set_source_surface(previewCr, targetSurface, 0, 0);
-    cairo_paint(previewCr);
-    return previewSurface;
+    if (targetChanged || previewChanged) {
+      cairo_set_source_surface(previewCr, targetSurface, 0, 0);
+      cairo_paint(previewCr);
+      targetChanged  = false;
+      previewChanged = false;
+    }
   }
 
   ~SubjectDetail()
@@ -143,7 +147,12 @@ Subject::source() const
 
 void
 Subject::preview(Action action)
-{}
+{
+  detail->previewChanged = true;
+  detail->render();
+  detail->source.detail->apply(detail->previewCr);
+  action(detail->previewCr);
+}
 
 void
 Subject::execute(Action action)

@@ -21,7 +21,7 @@ BrushTool::clickDown(const ClickContext& ctx)
   oldY      = y;
   mouseDown = true;
   ctx.execute([x, y](cairo_t* cr) {
-    cairo_move_to(cr, x, y);
+    cairo_rectangle(cr, x, y, 0.1, 0.1);
     cairo_stroke(cr);
   });
   return true;
@@ -50,8 +50,12 @@ BrushTool::move(const MoveContext& ctx)
     });
     oldX = x;
     oldY = y;
-    return true;
+  } else {
+    ctx.preview([x, y](cairo_t* cr) {
+      cairo_rectangle(cr, x, y, .1, .1);
+      cairo_stroke(cr);
+    });
   }
-  return false;
+  return true;
 }
 }
