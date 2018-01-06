@@ -5,17 +5,8 @@
 
 namespace pix {
 
-/**
- * @brief Represents mouse buttons
- */
-enum class Button : unsigned char
-{
-  LEFT,
-  MIDDLE,
-  RIGHT
-};
-
-struct SubjectDetail; // Forward decl. Ignore this
+enum class Button : uint8_t; // Forward decl. Ignore this
+struct SubjectDetail;        // Forward decl. Ignore this
 
 /**
  * @brief Represents a drawable target.
