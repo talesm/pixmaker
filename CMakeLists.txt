@@ -3,6 +3,7 @@ project(pix)
 
 add_library(pix_core 
     src/BrushTool
+    src/LineTool
     src/Source
     src/Subject
     src/ToolContext
