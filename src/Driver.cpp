@@ -5,6 +5,7 @@
 #include "BrushTool.hpp"
 #include "CommandInput.hpp"
 #include "LineTool.hpp"
+#include "RectangleTool.hpp"
 #include "Subject.hpp"
 
 using namespace std;
@@ -66,6 +67,18 @@ chooseTool(string toolName)
   static auto singleLineToolGenerator = []() -> unique_ptr<pix::Tool> {
     return make_unique<pix::LineTool>(false);
   };
+  static auto rectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::WIRED, false);
+  };
+  static auto filledRectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::FILLED, false);
+  };
+  static auto squareToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::WIRED, true);
+  };
+  static auto squareRectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::FILLED, true);
+  };
   using ToolGenerator = std::function<unique_ptr<pix::Tool>()>;
   static unordered_map<string, ToolGenerator> toolGenerators{
     {"l", lineToolGenerator},
@@ -77,6 +90,18 @@ chooseTool(string toolName)
     {"p", brushToolGenerator},
     {"pencil", brushToolGenerator},
     {"brush", brushToolGenerator},
+    {"r", rectToolGenerator},
+    {"wr", rectToolGenerator},
+    {"rectangle", rectToolGenerator},
+    {"wired rectangle", rectToolGenerator},
+    {"fr", filledRectToolGenerator},
+    {"filled rectangle", filledRectToolGenerator},
+    {"s", squareToolGenerator},
+    {"ws", squareToolGenerator},
+    {"square", squareToolGenerator},
+    {"wired square", squareToolGenerator},
+    {"fs", squareRectToolGenerator},
+    {"filled square", squareRectToolGenerator},
   };
   if (toolName == "") {
     throw runtime_error("Empty Tool name");
