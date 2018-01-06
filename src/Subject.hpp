@@ -13,9 +13,6 @@ struct SubjectDetail;        // Forward decl. Ignore this
  */
 class Subject
 {
-  std::unique_ptr<SubjectDetail> detail;
-  Subject(std::unique_ptr<SubjectDetail> detail);
-
 public:
   ~Subject();
   Subject(const Subject&) = delete;
@@ -47,5 +44,9 @@ public:
 
   void          source(Source&& value);
   const Source& source() const;
+
+private:
+  std::unique_ptr<SubjectDetail> detail;
+  Subject(std::unique_ptr<SubjectDetail> detail);
 };
 }
