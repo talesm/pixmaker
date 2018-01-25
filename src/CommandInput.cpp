@@ -11,17 +11,24 @@ using namespace std;
 
 /* Callback for when the OK button is clicked */
 static bool quit = false;
+static bool cancel;
+
 static void
 OKClicked(KW_Widget* widget, int b)
 {
-  quit = true;
+  cancel = false;
+  quit   = true;
 }
 
 static void
 EnterPressed(KW_Widget* widget, SDL_Keycode sym, SDL_Scancode code)
 {
   if (sym == SDLK_KP_ENTER || sym == SDLK_RETURN) {
-    quit = true;
+    cancel = false;
+    quit   = true;
+  } else if (sym == SDLK_ESCAPE) {
+    cancel = true;
+    quit   = true;
   }
 }
 
@@ -79,8 +86,8 @@ CommandInput::input(const string& prompt) const
     SDL_RenderPresent(renderer);
     SDL_Delay(1);
   }
-  string input = KW_GetEditboxText(editbox);
-
-  /* free stuff */
-  return input;
+  if (cancel) {
+    return "";
+  }
+  return KW_GetEditboxText(editbox);
 }
