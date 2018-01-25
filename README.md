@@ -28,7 +28,7 @@ Ensure you have the following dependencies:
 
 On ubuntu (or most debian based), you can just execute the following as root:
 
-    apt-get install cmake libsdl2-dev libcairo2-dev 
+    apt-get install cmake libsdl2-dev libsdl2-ttf-dev libcairo2-dev 
 
 
 Then choose an apropriated directory (we recoment `build/`, but it's your call) and hit:

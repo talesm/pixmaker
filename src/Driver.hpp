@@ -7,6 +7,7 @@
 namespace pix {
 class Subject;
 }
+class CommandInput;
 
 enum class EventResult
 {

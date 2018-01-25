@@ -3,26 +3,20 @@
 #include <memory>
 #include "Source.hpp"
 
+typedef struct _cairo cairo_t; // Forward declaration. Ignore
+
 namespace pix {
 
-/**
- * @brief Represents mouse buttons
- */
-enum class Button : unsigned char
-{
-  LEFT,
-  MIDDLE,
-  RIGHT
-};
-
-struct SubjectDetail; // Forward decl. Ignore this
+enum class Button : uint8_t; // Forward decl. Ignore this
+struct SubjectDetail;        // Forward decl. Ignore this
+struct Tool;                 // Forward decl. Ignore this
 
 /**
  * @brief Represents a drawable target.
  */
 class Subject
 {
-  std::unique_ptr<SubjectDetail> detail;
+private:
   Subject(std::unique_ptr<SubjectDetail> detail);
 
 public:
@@ -56,5 +50,16 @@ public:
 
   void          source(Source&& value);
   const Source& source() const;
+  void          tool(std::unique_ptr<Tool> value);
+  const Tool&   tool() const;
+
+private:
+  using Action = std::function<void(cairo_t*)>;
+  void preview(Action action);
+  void execute(Action action);
+  friend class ToolContext;
+
+private:
+  std::unique_ptr<SubjectDetail> detail;
 };
 }

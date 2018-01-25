@@ -1,7 +1,11 @@
 #include "Driver.hpp"
 #include <iostream>
+#include <unordered_map>
 #include <SDL.h>
+#include "BrushTool.hpp"
 #include "CommandInput.hpp"
+#include "LineTool.hpp"
+#include "RectangleTool.hpp"
 #include "Subject.hpp"
 
 using namespace std;
@@ -46,6 +50,64 @@ Driver::~Driver()
   }
 }
 
+static unique_ptr<pix::Tool>
+chooseTool(string toolName)
+{
+  static auto brushToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::BrushTool>();
+  };
+  static auto lineToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::LineTool>(true);
+  };
+  static auto singleLineToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::LineTool>(false);
+  };
+  static auto rectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::WIRED, false);
+  };
+  static auto filledRectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::FILLED, false);
+  };
+  static auto squareToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::WIRED, true);
+  };
+  static auto squareRectToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::RectangleTool>(pix::RectangleTool::FILLED, true);
+  };
+  using ToolGenerator = std::function<unique_ptr<pix::Tool>()>;
+  static unordered_map<string, ToolGenerator> toolGenerators{
+    {"l", lineToolGenerator},
+    {"ml", lineToolGenerator},
+    {"sl", singleLineToolGenerator},
+    {"line", lineToolGenerator},
+    {"multiline", lineToolGenerator},
+    {"singleline", singleLineToolGenerator},
+    {"p", brushToolGenerator},
+    {"pencil", brushToolGenerator},
+    {"brush", brushToolGenerator},
+    {"r", rectToolGenerator},
+    {"wr", rectToolGenerator},
+    {"rectangle", rectToolGenerator},
+    {"wired rectangle", rectToolGenerator},
+    {"fr", filledRectToolGenerator},
+    {"filled rectangle", filledRectToolGenerator},
+    {"s", squareToolGenerator},
+    {"ws", squareToolGenerator},
+    {"square", squareToolGenerator},
+    {"wired square", squareToolGenerator},
+    {"fs", squareRectToolGenerator},
+    {"filled square", squareRectToolGenerator},
+  };
+  if (toolName == "") {
+    throw runtime_error("Empty Tool name");
+  }
+  auto it = toolGenerators.find(toolName);
+  if (it == toolGenerators.end()) {
+    throw runtime_error("Invalid tool name: " + toolName);
+  }
+  return it->second();
+}
+
 EventResult
 Driver::handle(const SDL_Event& ev)
 {
@@ -66,6 +128,8 @@ Driver::handle(const SDL_Event& ev)
                                       newW,
                                       newH);
         }
+      } else if (ev.window.event == SDL_WINDOWEVENT_CLOSE) {
+        return EventResult::CLOSE_WINDOW;
       }
       dirty = true;
       break;
@@ -88,6 +152,12 @@ Driver::handle(const SDL_Event& ev)
             dirty = true;
           } else if (command[0] == 'c') {
             subject->source(pix::Source::FromColorName(command.substr(1)));
+          } else if (command[0] == 't') {
+            try {
+              subject->tool(chooseTool(command.substr(1)));
+            } catch (std::runtime_error& e) {
+              cerr << e.what() << endl;
+            }
           } else {
             cout << "Invalid command: \n" << command << endl;
           }
