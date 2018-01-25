@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Tool.hpp"
+#include "AreaToolBase.hpp"
 
 namespace pix {
 
@@ -8,22 +8,20 @@ namespace pix {
  * @brief A Pencil/Brush like tool
  *
  */
-class RectangleTool : public Tool
+class RectangleTool : public AreaToolBase
 {
 public:
-  enum Mode : uint8_t
-  {
-    WIRED,
-    FILLED
-  };
   RectangleTool(Mode mode, bool square = false)
-    : mode(mode)
-    , square(square)
+    : AreaToolBase(mode, square)
   {}
 
-  virtual bool clickDown(const ClickContext& ctx) override;
-  virtual bool clickUp(const ClickContext& ctx) override;
-  virtual bool move(const MoveContext& ctx) override;
+  virtual void draw(cairo_t* cr,
+                    float    x1,
+                    float    y1,
+                    float    x2,
+                    float    y2,
+                    bool     filled,
+                    bool     square) final;
 
 private:
   float oldX, oldY;

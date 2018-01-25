@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.3)
 project(pix)
 
 add_library(pix_core 
+    src/AreaToolBase
     src/BrushTool
     src/LineTool
     src/RectangleTool
