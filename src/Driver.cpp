@@ -28,8 +28,6 @@ Driver::Driver(unsigned w, unsigned h, const char* filename)
   }
   texture = SDL_CreateTexture(
     renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
-
-  commandInput = make_unique<CommandInput>(renderer, window);
 }
 
 Driver::~Driver()
@@ -39,9 +37,6 @@ Driver::~Driver()
   }
   if (texture) {
     SDL_DestroyTexture(texture);
-  }
-  if (commandInput) {
-    commandInput.reset();
   }
   if (renderer) {
     SDL_DestroyRenderer(renderer);
@@ -76,7 +71,8 @@ Driver::handle(const SDL_Event& ev)
       break;
     case SDL_KEYDOWN:
       if (ev.key.keysym.sym == SDLK_TAB) {
-        auto command = commandInput->input("Type a command");
+        auto commandInput = make_unique<CommandInput>(renderer, window);
+        auto command      = commandInput->input("Type a command");
         if (command.size() > 0) {
           if (command[0] == 's') {
             if (command.size() == 1) {

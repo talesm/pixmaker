@@ -7,7 +7,6 @@
 namespace pix {
 class Subject;
 }
-class CommandInput;
 
 enum class EventResult
 {
@@ -33,7 +32,6 @@ private:
   SDL_Renderer*                 renderer = nullptr;
   SDL_Texture*                  texture  = nullptr;
   std::unique_ptr<pix::Subject> subject;
-  std::unique_ptr<CommandInput> commandInput;
 
   void redraw() const;
 };
