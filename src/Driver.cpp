@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include "BrushTool.hpp"
 #include "CommandInput.hpp"
+#include "EllipseTool.hpp"
 #include "LineTool.hpp"
 #include "RectangleTool.hpp"
 #include "Subject.hpp"
@@ -71,8 +72,20 @@ chooseTool(string toolName)
   static auto squareToolGenerator = []() -> unique_ptr<pix::Tool> {
     return make_unique<pix::RectangleTool>(pix::RectangleTool::WIRED, true);
   };
-  static auto squareRectToolGenerator = []() -> unique_ptr<pix::Tool> {
+  static auto filledSquareToolGenerator = []() -> unique_ptr<pix::Tool> {
     return make_unique<pix::RectangleTool>(pix::RectangleTool::FILLED, true);
+  };
+  static auto ellipseToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::EllipseTool>(pix::EllipseTool::WIRED, false);
+  };
+  static auto filledEllipseToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::EllipseTool>(pix::EllipseTool::FILLED, false);
+  };
+  static auto circleToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::EllipseTool>(pix::EllipseTool::WIRED, true);
+  };
+  static auto filledCircleToolGenerator = []() -> unique_ptr<pix::Tool> {
+    return make_unique<pix::EllipseTool>(pix::EllipseTool::FILLED, true);
   };
   using ToolGenerator = std::function<unique_ptr<pix::Tool>()>;
   static unordered_map<string, ToolGenerator> toolGenerators{
@@ -95,8 +108,20 @@ chooseTool(string toolName)
     {"ws", squareToolGenerator},
     {"square", squareToolGenerator},
     {"wired square", squareToolGenerator},
-    {"fs", squareRectToolGenerator},
-    {"filled square", squareRectToolGenerator},
+    {"fs", filledSquareToolGenerator},
+    {"filled square", filledSquareToolGenerator},
+    {"e", ellipseToolGenerator},
+    {"we", ellipseToolGenerator},
+    {"ellipse", ellipseToolGenerator},
+    {"wired ellipse", ellipseToolGenerator},
+    {"fe", filledEllipseToolGenerator},
+    {"filled ellipse", filledEllipseToolGenerator},
+    {"c", circleToolGenerator},
+    {"wc", circleToolGenerator},
+    {"circle", circleToolGenerator},
+    {"wired circle", circleToolGenerator},
+    {"fc", filledCircleToolGenerator},
+    {"filled circle", filledCircleToolGenerator},
   };
   if (toolName == "") {
     throw runtime_error("Empty Tool name");

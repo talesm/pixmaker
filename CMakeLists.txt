@@ -4,6 +4,7 @@ project(pix)
 add_library(pix_core 
     src/AreaToolBase
     src/BrushTool
+    src/EllipseTool
     src/LineTool
     src/RectangleTool
     src/Source
